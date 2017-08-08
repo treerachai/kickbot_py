@@ -15,8 +15,8 @@ def function(bot,update):
 	# update.message.reply_text(update.message.text)
 	# print(update.message.text) 			# take text message
 	# print(update.message.chat_id) 		# take chat id 
-	# print(update.message.from_user.id) 	# take user id
-	user_message = lower(update.message.text)
+	# print(update.message.from_user.id) 		# take user id
+	user_message = update.message.text.lower()
 	for word in forbiddenWords:
 		if word in user_message:
 			update.message.reply_text("Whops! Cosa abbiamo qui?")
@@ -37,7 +37,7 @@ def main():
 		print("Ready")
 		updater.idle()
 	except KeyboardInterrupt: 
-		print("diocaneeeeeeeeee")
+		print("questo print non funziona")
 
 if __name__ == '__main__':
     main()
