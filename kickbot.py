@@ -2,8 +2,16 @@
 #-*- coding: utf-8 -*-
 
 from telegram.ext import *
+import csv,sys
 
-forbiddenWords = ['rododendro','mirtillo','pneumatico','falange','stuzzicante']
+forbiddenWords = []
+
+def importCSV():
+	with open('forbiddenWords.csv','rb') as f:
+		reader = csv.reader(f)
+		for row in reader: 
+			forbiddenWords.extend(row)
+		print(forbiddenWords)
 
 def start(bot,update):
 	update.message.reply_text("Il gioco è già iniziato.")
@@ -27,6 +35,7 @@ def function(bot,update):
 				update.message.reply_text("Troppo facile senza che io sia admin.")
 
 def main():
+	importCSV()
 	updater = Updater("352628614:AAGd9OPwCmUeVeEISFjKHs4si95-57mv-ro")
 	dp = updater.dispatcher
 	dp.add_handler(CommandHandler("start",start))
