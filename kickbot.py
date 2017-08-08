@@ -20,8 +20,8 @@ def appendCSV(word):
 	for fw in forbiddenWords:
 		if fw == word:
 			return False
-	with open('forbiddenWords.csv','w') as f:
-		f.write(word)
+	with open('forbiddenWords.csv','a') as f:
+		f.write(word+"\r\n")
 #	f=open('forbiddenWords.csv','w')
 #	writer=csv.writer(f,delimiter='',quotechar="",quoting=csv.QUOTE_ALL)
 #	writer.writerow(word)
