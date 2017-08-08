@@ -20,9 +20,11 @@ def appendCSV(word):
 	for fw in forbiddenWords:
 		if fw == word:
 			return False
-	f=open('forbiddenWords.csv','wb')
-	writer=csv.writer(f,delimiter='',quotechar="",quoting=csv.QUOTE_ALL)
-	writer.writerow(word)
+	with open('forbiddenWords.csv','w') as f:
+		f.write(word)
+#	f=open('forbiddenWords.csv','w')
+#	writer=csv.writer(f,delimiter='',quotechar="",quoting=csv.QUOTE_ALL)
+#	writer.writerow(word)
 	f.close()
 	forbiddenWords.extend(word)
 	print("Word %s added!",word)
@@ -32,8 +34,8 @@ def snforbidden(bot,update):
 	update.message.reply_text("Uhuh! Delizioso!")
 	sendedText=update.message.text.split()
 	if len(sendedText) > 1:
-		for w in sendedText[1:]:
-			appendCSV(w)
+		for word in sendedText[1:]:
+			appendCSV(word)
 
 def start(bot,update):
 	update.message.reply_text("Il gioco è già iniziato.")
