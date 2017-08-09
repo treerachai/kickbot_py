@@ -1,1 +1,1 @@
-python /home/pi/kickbot.py/kickbot.py
+python /home/pi/kickbot_py/kickbot.py

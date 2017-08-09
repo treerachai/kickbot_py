@@ -7,7 +7,7 @@ import csv,sys
 forbiddenWords = []
 
 def importCSV():
-	with open('forbiddenWords.csv','rb') as f:
+	with open('/home/pi/kickbot_py/forbiddenWords.csv','rb') as f:
 		reader = csv.reader(f)
 		for row in reader:
 			forbiddenWords.extend(row)
@@ -20,7 +20,7 @@ def appendCSV(word):
 	for fw in forbiddenWords:
 		if fw == word:
 			return False
-	with open('forbiddenWords.csv','a') as f:
+	with open('/home/pi/kickbot_py/forbiddenWords.csv','a') as f:
 		f.write(word+"\r\n")
 #	f=open('forbiddenWords.csv','w')
 #	writer=csv.writer(f,delimiter='',quotechar="",quoting=csv.QUOTE_ALL)
