@@ -22,9 +22,6 @@ def appendCSV(word):
 			return False
 	with open('/home/pi/kickbot_py/forbiddenWords.csv','a') as f:
 		f.write(word+"\r\n")
-#	f=open('forbiddenWords.csv','w')
-#	writer=csv.writer(f,delimiter='',quotechar="",quoting=csv.QUOTE_ALL)
-#	writer.writerow(word)
 	f.close()
 	forbiddenWords.extend(word)
 	print("Word %s added!",word)
@@ -43,16 +40,15 @@ def start(bot,update):
 def help(bot,update):
 	update.message.reply_text("Qualche parola ti farà bannare, molte altre no :) .")
 
-def function(bot,update):
-	# update.message.reply_text(update.message.text)
+def checkMessage(bot,update):
 	# print(update.message.text) 			# take text message
 	# print(update.message.chat_id) 		# take chat id
-	# print(update.message.from_user.id) 		# take user id
+	# print(update.message.from_user.id) 	# take user id
 	user_message = update.message.text.lower()
 	for word in forbiddenWords:
 		if word in user_message:
 			update.message.reply_text("Whops! Cosa abbiamo qui?")
-			if bot.kickChatMember(update.message.chat_id,update.message.from_user.id):
+			if bot.kickChatMember(update.message.chat_id,update.message.from_user.id) == True:
 				bot.unbanChatMember(update.message.chat_id,update.message.from_user.id)
 				break
 			else:
@@ -65,7 +61,7 @@ def main():
 	dp.add_handler(CommandHandler("start",start))
 	dp.add_handler(CommandHandler("help",help))
 	dp.add_handler(CommandHandler("snforbidden",snforbidden))
-	dp.add_handler(MessageHandler(Filters.text,function))
+	dp.add_handler(MessageHandler(Filters.text,checkMessage))
 	updater.start_polling()
 	try:
 		print("Ready")
