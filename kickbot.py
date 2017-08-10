@@ -65,20 +65,27 @@ def checkMessage(bot, update):
     user_message = update.message.text.lower()
     user = update.message.from_user
     for word in forbiddenWords:
+        print(word)
         if word in user_message:
             # print(bot.get_chat_administrators(update.message.chat_id));
             update.message.reply_text("Whops! Cosa abbiamo qui?")
-            time.sleep(5)
             # print("test passato")
             # print(user.name)
             # print(group_admin)
             if user.name in group_admin:
                 bot.send_message(update.message.chat_id, "Facile "+user.name+" quando sei admin")
-                break
+                return False
+            time.sleep(0.5)
+            bot.send_message(update.message.chat_id, "Ehi "+user.name+" pensavi di farla franca eh?")
+            time.sleep(0.5)
+            bot.send_message(update.message.chat_id, "e io ti banno")
+            time.sleep(0.8)
+            bot.send_message(update.message.chat_id, "avoglia se ti banno")
             bot.kickChatMember(update.message.chat_id, user.id)
-            print("test start")
             bot.unbanChatMember(update.message.chat_id, user.id)
-            print("test start")
+            bot.send_message(update.message.chat_id, "ecco fatto :D")
+            time.sleep(0.3)
+            bot.send_message(update.message.chat_id, "IL PROSSIMO!")
 
 def main():
     importCSV()
@@ -87,7 +94,6 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("snforbidden", snforbidden))
-    # dp.add_handler(CommandHandler("admin", get_admin_ids))
     dp.add_handler(MessageHandler(Filters.text, checkMessage))
     updater.start_polling()
     try:
