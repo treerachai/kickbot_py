@@ -20,6 +20,8 @@ def importCSV():
 def appendCSV(word):
     word.lower()
     # check if word is barely legal
+    if len(word) < 3: 
+        return False
     for fw in forbiddenWords:
         if fw == word:
             return False
@@ -58,7 +60,6 @@ def get_admin_ids(admin_obj):
     # print(group_admin)
 
 def checkMessage(bot, update):
-    # global group_admin
     # print(update.message.text) 			# take text message
     # print(update.message.chat_id) 		# take chat id
     # print(update.message.from_user.id) 	# take user id
