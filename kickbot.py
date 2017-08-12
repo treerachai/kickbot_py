@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+# TODO: se non è stato eseguito start almeno la prima volta, non far funzionare niente altro
 from telegram.ext import *
-import csv, sys, time
+
+import csv, sys, time, os.path
 
 forbiddenWords = []
 group_admin = []
@@ -15,7 +16,6 @@ def importCSV():
             forbiddenWords.extend(row)
         print(forbiddenWords)
     f.close()
-
 
 def appendCSV(word):
     word.lower()
@@ -33,30 +33,86 @@ def appendCSV(word):
     print("Word %s added!", word)
     return True
 
+ # TODO: modificare il codice aggiungendo questa funzione per le opzioni solo per admin
+def isAdmin(user, admin_obj):
+    if user in get_admin_ids(admin_obj):
+        return True
+    return False
+
+
+ # TODO: finire la funzione update_admin gestire l'aggiornamento vedi commeento
+ # TODO: aggiorna il codice dove usi questa funzione
+def update_admin(chat_id, admin_obj, me):
+    admin = get_admin_ids(admin_obj)
+    filepath = "res/"+str(chat_id)+"/members.csv"
+    if not os.path.exists(filepath):
+        with open(filepath, 'wb') as file:
+            wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
+            wr.writerow(["member_nick", "admin", "kick_times"])
+            admin.remove("@"+me.username)
+            for user in admin:
+                wr.writerow([user, 1, 0])
+            file.close()
+    else:
+        # questo
+        with open(filepath, 'r') as file:
+            reader = csv.reader(file)
+            print(reader)
+            for row in reader:
+                print(row)
+    print(admin)
+    return admin
 
 def snforbidden(bot, update):
     user = update.message.from_user
-    if user.name not in group_admin:
+    if not isAdmin(user.name, bot.get_chat_administrators(update.message.chat_id)):
         update.message.reply_text("La aggiungo solo se te lo meriti")
     else:
         update.message.reply_text("Uhuh! Delizioso!")
         sendedText = update.message.text.split()
         if len(sendedText) > 1:
             for word in sendedText[1:]:
-                appendCSV(word)
+                if not appendCSV(word):
+                    bot.send_message(update.message.chat_id, "peccato che qualcuno abbia pensato a " + word + " prima di te")
 
 def start(bot, update):
-    get_admin_ids(bot.get_chat_administrators(update.message.chat_id))
+    chat_id = update.message.chat_id
+    print(chat_id)
+    config_path = "res/"+str(chat_id)
+    print(config_path)
+    if not os.path.exists(config_path):
+        os.makedirs(config_path)
+    if not os.path.exists(config_path+"/config.csv"):
+        with open(config_path+"/config.csv", 'wb') as file:
+            wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
+            wr.writerow(["property", "value"])
+            wr.writerow(["ready", "true"])
+            file.close()
+    admin = update_admin(update.message.chat_id, bot.get_chat_administrators(update.message.chat_id), bot.getMe())
+        # with open(config_path+"/members.csv  ", 'wb') as file:
+        #     wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_ALL)
+        #     wr.writerow(["member_nick", "admin", "kick_times"])
+        #     admin = get_admin_ids(bot.get_chat_administrators(update.message.chat_id))
+        #     admin.remove("@"+bot.getMe().username)
+        #     for user in admin:
+        #         wr.writerow([user, 1, 0])
+        #     file.close()
+
     update.message.reply_text("Il gioco è appena iniziato.")
 
+def test(bot, update):
+    print(True)
+
 def help(bot, update):
-    update.message.reply_text("Qualche parola ti farà bannare, molte altre no :) .")
+    update.message.reply_text("Qualche parola ti farà bannare, molte altre no :)")
+    bot.send_message(update.message.chat_id, "si consiglia di aggiungere il bot agli admin prima di eseguire il comando /start")
 
 def get_admin_ids(admin_obj):
-    global group_admin
     admins = ([admin.user.name for admin in admin_obj])
-    if not group_admin:
-        group_admin = admins
+    print(admins)
+    return admins
+    # if not group_admin:
+    #     group_admin = admins
     # print(group_admin)
 
 def checkMessage(bot, update):
@@ -66,7 +122,7 @@ def checkMessage(bot, update):
     user_message = update.message.text.lower()
     user = update.message.from_user
     for word in forbiddenWords:
-        print(word)
+        # print(word)
         if word in user_message:
             # print(bot.get_chat_administrators(update.message.chat_id));
             update.message.reply_text("Whops! Cosa abbiamo qui?")
@@ -94,6 +150,7 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("test", test))
     dp.add_handler(CommandHandler("snforbidden", snforbidden))
     dp.add_handler(MessageHandler(Filters.text, checkMessage))
     updater.start_polling()
