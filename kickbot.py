@@ -29,39 +29,18 @@ def appendCSV(word):
     with open('forbiddenWords.csv', 'a') as f:
         f.write(word + "\r\n")
     f.close()
-    forbiddenWords.extend(word)
+    forbiddenWords.extend([word])
     print("Word %s added!", word)
     return True
 
- # TODO: modificare il codice aggiungendo questa funzione per le opzioni solo per admin
 def isAdmin(user, admin_obj):
     if user in get_admin_ids(admin_obj):
         return True
     return False
 
-
- # TODO: finire la funzione update_admin gestire l'aggiornamento vedi commeento
- # TODO: aggiorna il codice dove usi questa funzione
-def update_admin(chat_id, admin_obj, me):
-    admin = get_admin_ids(admin_obj)
-    filepath = "res/"+str(chat_id)+"/members.csv"
-    if not os.path.exists(filepath):
-        with open(filepath, 'wb') as file:
-            wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
-            wr.writerow(["member_nick", "admin", "kick_times"])
-            admin.remove("@"+me.username)
-            for user in admin:
-                wr.writerow([user, 1, 0])
-            file.close()
-    else:
-        # questo
-        with open(filepath, 'r') as file:
-            reader = csv.reader(file)
-            print(reader)
-            for row in reader:
-                print(row)
-    print(admin)
-    return admin
+def manageUser(user, chat_id):
+    if os.path.exists('res/'+chat_id+'/users.csv'):
+        with open('res/'+chat_id+'/users.csv', '')
 
 def snforbidden(bot, update):
     user = update.message.from_user
@@ -88,15 +67,6 @@ def start(bot, update):
             wr.writerow(["property", "value"])
             wr.writerow(["ready", "true"])
             file.close()
-    admin = update_admin(update.message.chat_id, bot.get_chat_administrators(update.message.chat_id), bot.getMe())
-        # with open(config_path+"/members.csv  ", 'wb') as file:
-        #     wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_ALL)
-        #     wr.writerow(["member_nick", "admin", "kick_times"])
-        #     admin = get_admin_ids(bot.get_chat_administrators(update.message.chat_id))
-        #     admin.remove("@"+bot.getMe().username)
-        #     for user in admin:
-        #         wr.writerow([user, 1, 0])
-        #     file.close()
 
     update.message.reply_text("Il gioco è appena iniziato.")
 
@@ -109,7 +79,7 @@ def help(bot, update):
 
 def get_admin_ids(admin_obj):
     admins = ([admin.user.name for admin in admin_obj])
-    print(admins)
+    # print(admins)
     return admins
     # if not group_admin:
     #     group_admin = admins
@@ -121,6 +91,8 @@ def checkMessage(bot, update):
     # print(update.message.from_user.id) 	# take user id
     user_message = update.message.text.lower()
     user = update.message.from_user
+    # print(user_message)
+    # print(forbiddenWords)
     for word in forbiddenWords:
         # print(word)
         if word in user_message:
@@ -129,7 +101,7 @@ def checkMessage(bot, update):
             # print("test passato")
             # print(user.name)
             # print(group_admin)
-            if user.name in group_admin:
+            if isAdmin(user.name, bot.get_chat_administrators(update.message.chat_id)):
                 bot.send_message(update.message.chat_id, "Facile "+user.name+" quando sei admin")
                 return False
             time.sleep(0.5)
