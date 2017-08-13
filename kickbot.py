@@ -38,9 +38,9 @@ def isAdmin(user, admin_obj):
         return True
     return False
 
-def manageUser(user, chat_id):
-    if os.path.exists('res/'+chat_id+'/users.csv'):
-        with open('res/'+chat_id+'/users.csv', '')
+# def manageUser(user, chat_id):
+ #   if os.path.exists('res/'+chat_id+'/users.csv'):
+        # with open('res/'+chat_id+'/users.csv', '') as f
 
 def snforbidden(bot, update):
     user = update.message.from_user
