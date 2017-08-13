@@ -8,16 +8,28 @@ import csv, sys, time, os.path
 forbiddenWords = []
 group_admin = []
 
-def importCSV():
-    # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'rb') as f:
-    with open('forbiddenWords.csv', 'rb') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            forbiddenWords.extend(row)
-        print(forbiddenWords)
-    f.close()
+def forbiddenWords(chat_id):
+    if os.path.exists("res/"+str(chat_id)+"/forbiddenWords.csv"):
+        ret_forbidden = []
+        with open("res/"+str(chat_id)+"/forbiddenWords.csv", "rb") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                ret_forbidden.extend(row)
+        f.close()
+    else:
+       return False
+    return ret_forbidden
 
-def appendCSV(word):
+#def importCSV():
+    # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'rb') as f:
+#    with open('forbiddenWords.csv', 'rb') as f:
+#        reader = csv.reader(f)
+#        for row in reader:
+#            forbiddenWords.extend(row)
+#        print(forbiddenWords)
+#    f.close()
+
+def appendCSV(word, chat_id):
     word.lower()
     # check if word is barely legal
     if len(word) < 3: 
@@ -26,7 +38,7 @@ def appendCSV(word):
         if fw == word:
             return False
     # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'a') as f:
-    with open('forbiddenWords.csv', 'a') as f:
+    with open('res/'+chat_id+'/forbiddenWords.csv', 'a') as f:
         f.write(word + "\r\n")
     f.close()
     forbiddenWords.extend([word])
@@ -51,7 +63,7 @@ def snforbidden(bot, update):
         sendedText = update.message.text.split()
         if len(sendedText) > 1:
             for word in sendedText[1:]:
-                if not appendCSV(word):
+                if not appendCSV(word, update.message.chat_id):
                     bot.send_message(update.message.chat_id, "peccato che qualcuno abbia pensato a " + word + " prima di te")
 
 def start(bot, update):
@@ -67,11 +79,17 @@ def start(bot, update):
             wr.writerow(["property", "value"])
             wr.writerow(["ready", "true"])
             file.close()
+    if not os.path.exists(config_path+"forbiddenWords.csv"):
+        with open(config_path+"forbiddenWords.csv", "wb"):
+            wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
+            wr.writerow(["catafalco"])
+            file.close()
 
+            
     update.message.reply_text("Il gioco è appena iniziato.")
 
 def test(bot, update):
-    print(True)
+    print(update.message.from_user.id)
 
 def help(bot, update):
     update.message.reply_text("Qualche parola ti farà bannare, molte altre no :)")
@@ -93,7 +111,7 @@ def checkMessage(bot, update):
     user = update.message.from_user
     # print(user_message)
     # print(forbiddenWords)
-    for word in forbiddenWords:
+    for word in forbiddenWords(update.message.chat_id):
         # print(word)
         if word in user_message:
             # print(bot.get_chat_administrators(update.message.chat_id));
@@ -104,20 +122,23 @@ def checkMessage(bot, update):
             if isAdmin(user.name, bot.get_chat_administrators(update.message.chat_id)):
                 bot.send_message(update.message.chat_id, "Facile "+user.name+" quando sei admin")
                 return False
-            time.sleep(0.5)
+            time.sleep(1)
             bot.send_message(update.message.chat_id, "Ehi "+user.name+" pensavi di farla franca eh?")
-            time.sleep(0.5)
+            time.sleep(1)
             bot.send_message(update.message.chat_id, "e io ti banno")
-            time.sleep(0.8)
+            time.sleep(1)
             bot.send_message(update.message.chat_id, "avoglia se ti banno")
+            if update.message.from_user.id == 111612345 or update.message.from_user.id == 17232977:
+                bot.send_message(update.message.chat_id, 'ma io non posso bannare il mio papà')
+		return False	
             bot.kickChatMember(update.message.chat_id, user.id)
-            bot.unbanChatMember(update.message.chat_id, user.id)
+            if update.message.chat.type == "supergroup":
+                bot.unbanChatMember(update.message.chat_id, user.id)
             bot.send_message(update.message.chat_id, "ecco fatto :D")
-            time.sleep(0.3)
             bot.send_message(update.message.chat_id, "IL PROSSIMO!")
 
 def main():
-    importCSV()
+#    importCSV()
     updater = Updater("352628614:AAGd9OPwCmUeVeEISFjKHs4si95-57mv-ro")
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
