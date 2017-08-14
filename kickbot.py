@@ -3,28 +3,21 @@
 # TODO: se non è stato eseguito start almeno la prima volta, non far funzionare niente altro
 from telegram.ext import *
 
-import csv, sys, time, os.path
+import csv, sys, time, os.path, pandas
+
 
 def forbiddenWords(chat_id):
-    if os.path.exists("res/"+str(chat_id)+"/forbiddenWords.csv"):
+    if os.path.exists("res/" + str(chat_id) + "/forbidden_words.csv"):
         ret_forbidden = []
-        with open("res/"+str(chat_id)+"/forbiddenWords.csv", "r") as f:
+        with open("res/" + str(chat_id) + "/forbidden_words.csv", "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 ret_forbidden.extend(row)
         f.close()
     else:
-       return False
+        return False
     return ret_forbidden
 
-#def importCSV():
-    # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'rb') as f:
-#    with open('forbiddenWords.csv', 'rb') as f:
-#        reader = csv.reader(f)
-#        for row in reader:
-#            forbiddenWords.extend(row)
-#        print(forbiddenWords)
-#    f.close()
 
 def appendCSV(word, chat_id):
     word.lower()
@@ -35,25 +28,50 @@ def appendCSV(word, chat_id):
         if fw == word:
             return False
     # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'a') as f:
-    with open('res/'+str(chat_id)+'/forbiddenWords.csv', 'a') as f:
+    with open('res/' + str(chat_id) + '/forbidden_words.csv', 'a') as f:
         wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
         wr.writerow([word])
         f.close()
     print("Word %s added!", word)
     return True
 
+
 def isAdmin(user, admin_obj):
     if user in get_admin_ids(admin_obj):
         return True
     return False
 
-# def manageUser(user, chat_id):
- #   if os.path.exists('res/'+chat_id+'/users.csv'):
-        # with open('res/'+chat_id+'/users.csv', '') as f
+
+def manageUser(user, chat_id):
+    user_file = []
+    with open('res/' + str(chat_id) + '/users.csv', 'r') as f:
+        print('wow')
+        reader = csv.reader(f)
+        for row in reader:
+            user_file.extend([row[0].split(";")])
+        f.close()
+        # print(user_file)
+    print(user_file)
+    for row in user_file:
+        if str(user) in row[0]:
+            print('wow')
+            #TODO: capire se questo funziona
+            f = pandas.read_csv('res/' + str(chat_id) + '/users.csv')
+            print(f)
+            print(int(f.get_value(user, "kick")))
+            f.set_value(user, "kick", int(f.get_value(user, "kick"))+1)
+            f.to_csv('res/' + chat_id + '/users.csv')
+            return True
+
+    with open('res/' + str(chat_id) + '/users.csv', 'a') as f:
+        wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
+        wr.writerow([user, 1])
+        f.close()
+
 
 def snforbidden(bot, update):
     user = update.message.from_user
-    if not isAdmin(user.name, bot.get_chat_administrators(update.message.chat_id)):
+    if not isAdmin(user.id, bot.get_chat_administrators(update.message.chat_id)):
         update.message.reply_text("La aggiungo solo se te lo meriti")
     else:
         update.message.reply_text("Uhuh! Delizioso!")
@@ -61,42 +79,51 @@ def snforbidden(bot, update):
         if len(sendedText) > 1:
             for word in sendedText[1:]:
                 if not appendCSV(word, update.message.chat_id):
-                    bot.send_message(update.message.chat_id, "peccato che qualcuno abbia pensato a " + word + " prima di te")
+                    bot.send_message(update.message.chat_id,"peccato che qualcuno abbia pensato a " + word + " prima di te")
+
 
 def start(bot, update):
     chat_id = update.message.chat_id
     print(chat_id)
-    config_path = "res/"+str(chat_id)
+    config_path = "res/" + str(chat_id)
     print(config_path)
     if not os.path.exists(config_path):
         os.makedirs(config_path)
-        with open(config_path+"/config.csv", 'wb') as file:
+        with open(config_path + "/config.csv", 'wb') as file:
             wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
             wr.writerow(["property", "value"])
             wr.writerow(["ready", "true"])
             file.close()
-        with open(config_path+"/forbiddenWords.csv", "wb") as file:
+        with open(config_path + "/forbidden_words.csv", "wb") as file:
             wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
             wr.writerow(["catafalco"])
             file.close()
+        with open(config_path + '/users.csv', 'wb') as f:
+            wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
+            wr.writerow(["user_id", "kicked"])
+            f.close()
 
-            
     update.message.reply_text("Il gioco è appena iniziato.")
+
 
 def test(bot, update):
     print(forbiddenWords(update.message.chat_id))
 
+
 def help(bot, update):
     update.message.reply_text("Qualche parola ti farà bannare, molte altre no :)")
-    bot.send_message(update.message.chat_id, "si consiglia di aggiungere il bot agli admin prima di eseguire il comando /start")
+    bot.send_message(update.message.chat_id,
+                     "si consiglia di aggiungere il bot agli admin prima di eseguire il comando /start")
+
 
 def get_admin_ids(admin_obj):
-    admins = ([admin.user.name for admin in admin_obj])
+    admins = ([admin.user.id for admin in admin_obj])
     # print(admins)
     return admins
     # if not group_admin:
     #     group_admin = admins
     # print(group_admin)
+
 
 def checkMessage(bot, update):
     # print(update.message.text) 			# take text message
@@ -111,14 +138,15 @@ def checkMessage(bot, update):
         if word in user_message:
             # print(bot.get_chat_administrators(update.message.chat_id));
             update.message.reply_text("Whops! Cosa abbiamo qui?")
+            manageUser(user.id, update.message.chat_id)
             # print("test passato")
             # print(user.name)
             # print(group_admin)
-            if isAdmin(user.name, bot.get_chat_administrators(update.message.chat_id)):
-                bot.send_message(update.message.chat_id, "Facile "+user.name+" quando sei admin")
+            if isAdmin(user.id, bot.get_chat_administrators(update.message.chat_id)):
+                bot.send_message(update.message.chat_id, "Facile " + user.name + " quando sei admin")
                 return False
             time.sleep(1)
-            bot.send_message(update.message.chat_id, "Ehi "+user.name+" pensavi di farla franca eh?")
+            bot.send_message(update.message.chat_id, "Ehi " + user.name + " pensavi di farla franca eh?")
             time.sleep(1)
             bot.send_message(update.message.chat_id, "e io ti banno")
             time.sleep(1)
@@ -132,8 +160,9 @@ def checkMessage(bot, update):
             bot.send_message(update.message.chat_id, "ecco fatto :D")
             bot.send_message(update.message.chat_id, "IL PROSSIMO!")
 
+
 def main():
-#    importCSV()
+    #    importCSV()
     updater = Updater("352628614:AAGd9OPwCmUeVeEISFjKHs4si95-57mv-ro")
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
