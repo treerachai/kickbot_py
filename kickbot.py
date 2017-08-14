@@ -5,13 +5,10 @@ from telegram.ext import *
 
 import csv, sys, time, os.path
 
-forbiddenWords = []
-group_admin = []
-
 def forbiddenWords(chat_id):
     if os.path.exists("res/"+str(chat_id)+"/forbiddenWords.csv"):
         ret_forbidden = []
-        with open("res/"+str(chat_id)+"/forbiddenWords.csv", "rb") as f:
+        with open("res/"+str(chat_id)+"/forbiddenWords.csv", "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 ret_forbidden.extend(row)
@@ -32,16 +29,16 @@ def forbiddenWords(chat_id):
 def appendCSV(word, chat_id):
     word.lower()
     # check if word is barely legal
-    if len(word) < 3: 
+    if len(word) < 3:
         return False
-    for fw in forbiddenWords:
+    for fw in forbiddenWords(chat_id):
         if fw == word:
             return False
     # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'a') as f:
-    with open('res/'+chat_id+'/forbiddenWords.csv', 'a') as f:
-        f.write(word + "\r\n")
-    f.close()
-    forbiddenWords.extend([word])
+    with open('res/'+str(chat_id)+'/forbiddenWords.csv', 'a') as f:
+        wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
+        wr.writerow([word])
+        f.close()
     print("Word %s added!", word)
     return True
 
@@ -73,14 +70,12 @@ def start(bot, update):
     print(config_path)
     if not os.path.exists(config_path):
         os.makedirs(config_path)
-    if not os.path.exists(config_path+"/config.csv"):
         with open(config_path+"/config.csv", 'wb') as file:
             wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
             wr.writerow(["property", "value"])
             wr.writerow(["ready", "true"])
             file.close()
-    if not os.path.exists(config_path+"forbiddenWords.csv"):
-        with open(config_path+"forbiddenWords.csv", "wb"):
+        with open(config_path+"/forbiddenWords.csv", "wb") as file:
             wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
             wr.writerow(["catafalco"])
             file.close()
@@ -89,7 +84,7 @@ def start(bot, update):
     update.message.reply_text("Il gioco è appena iniziato.")
 
 def test(bot, update):
-    print(update.message.from_user.id)
+    print(forbiddenWords(update.message.chat_id))
 
 def help(bot, update):
     update.message.reply_text("Qualche parola ti farà bannare, molte altre no :)")
@@ -130,7 +125,7 @@ def checkMessage(bot, update):
             bot.send_message(update.message.chat_id, "avoglia se ti banno")
             if update.message.from_user.id == 111612345 or update.message.from_user.id == 17232977:
                 bot.send_message(update.message.chat_id, 'ma io non posso bannare il mio papà')
-		return False	
+                return False
             bot.kickChatMember(update.message.chat_id, user.id)
             if update.message.chat.type == "supergroup":
                 bot.unbanChatMember(update.message.chat_id, user.id)
