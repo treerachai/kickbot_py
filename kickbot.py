@@ -53,13 +53,21 @@ def manageUser(user, chat_id):
         # print(user_file)
     print(user_file)
     for row in user_file:
+        print(row[0])
+        print(user)
+        print(user == row[0])
+        print(str(user) == row[0])
         if str(user) in row[0]:
-            print('wow')
-            #TODO: capire se questo funziona
-            f = pandas.read_csv('res/' + str(chat_id) + '/users.csv')
+            print('wow2')
+            #TODO: capire come matchare la index da un valore interno alla row
+            f = pandas.read_csv('res/' + str(chat_id) + '/users.csv', sep=';')
             print(f)
-            print(int(f.get_value(user, "kick")))
-            f.set_value(user, "kick", int(f.get_value(user, "kick"))+1)
+            print(f.loc[str(user)])
+            # print(f[f['user_id'] == str(user)].index[0])
+            k_times = f.get_value(user, "kicked")
+            print(k_times)
+            f.set_value(user, "kicked", k_times)
+            print('passed')
             f.to_csv('res/' + chat_id + '/users.csv')
             return True
 
