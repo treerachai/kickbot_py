@@ -53,22 +53,25 @@ def manageUser(user, chat_id):
         # print(user_file)
     print(user_file)
     for row in user_file:
-        print(row[0])
-        print(user)
-        print(user == row[0])
-        print(str(user) == row[0])
+        # print(row[0])
+        # print(user)
+        # print(user == row[0])
+        # print(str(user) == row[0])
         if str(user) in row[0]:
             print('wow2')
-            #TODO: capire come matchare la index da un valore interno alla row
             f = pandas.read_csv('res/' + str(chat_id) + '/users.csv', sep=';')
-            print(f)
-            print(f.loc[str(user)])
+            f1 = f.set_index("user_id")
+            print(f1)
+            print(f1.get_value(user, "kicked"))
+            # print(f1.get_value(user, "user_id"))
+            # print(f.loc[str(user)])
             # print(f[f['user_id'] == str(user)].index[0])
-            k_times = f.get_value(user, "kicked")
+            k_times = f1.get_value(user, "kicked")+1
             print(k_times)
-            f.set_value(user, "kicked", k_times)
+            f1.set_value(user, "kicked", k_times)
             print('passed')
-            f.to_csv('res/' + chat_id + '/users.csv')
+            #TOD(ieg)O: questa istruzione non sovrsrive il file
+            f1.to_csv(path_or_buf='res/' + chat_id + '/users.csv', sep=';')
             return True
 
     with open('res/' + str(chat_id) + '/users.csv', 'a') as f:
