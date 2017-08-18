@@ -33,7 +33,7 @@ def appendCSV(word, chat_id):
         wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
         wr.writerow([word, 0])
         f.close()
-    print("Word %s added!", word)
+    # print("Word %s added!", word)
     return True
 
 
@@ -65,7 +65,7 @@ def manageUser(user, chat_id):
 
 
 def countWord(word, chat_id):
-    print('start countWord')
+    # print('start countWord')
     f = pandas.read_csv('res/' + str(chat_id) + '/forbidden_words.csv', sep=';')
     f_index = f.set_index('word')
     k_times = f_index.get_value(word, 'called_times') + 1
@@ -76,7 +76,8 @@ def countWord(word, chat_id):
 def snforbidden(bot, update):
     user = update.message.from_user
     if not isAdmin(user, bot.get_chat_administrators(
-            update.message.chat_id)) and not ( update.message.from_user.id == 111612345 or update.message.from_user.id == 17232977):
+            update.message.chat_id)) and not (
+                    update.message.from_user.id == 111612345 or update.message.from_user.id == 17232977):
         update.message.reply_text("La aggiungo solo se te lo meriti")
     else:
         update.message.reply_text("Uhuh! Delizioso!")
@@ -171,8 +172,8 @@ def my_id(bot, update):
     bot.send_message(update.message.chat_id, update.message.from_user.id)
 
 
-def test(bot, update):
-    print(update.message.chat)
+# def test(bot, update):
+# print(update.message.chat)
 
 
 def help(bot, update):
@@ -196,7 +197,7 @@ def checkMessage(bot, update):
     # print(update.message.from_user.id) 	# take user id
     user_message = update.message.text.lower()
     user = update.message.from_user
-    print(update.message.chat_id)
+    # print(update.message.chat_id)
     addUser(user, update.message.chat_id)
     for word in forbiddenWords(update.message.chat_id):
         if word in user_message:
@@ -232,17 +233,13 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("test", test))
-    dp.add_handler(CommandHandler("id", my_id))
+    # dp.add_handler(CommandHandler("test", test))
+    # dp.add_handler(CommandHandler("id", my_id))
     dp.add_handler(CommandHandler("stat", stat))
     dp.add_handler(CommandHandler("snforbidden", snforbidden))
     dp.add_handler(MessageHandler(Filters.text, checkMessage))
     updater.start_polling()
-    try:
-        print("Ready")
-        updater.idle()
-    except KeyboardInterrupt:
-        print("questo print non funziona")
+    updater.idle()
 
 
 if __name__ == '__main__':
