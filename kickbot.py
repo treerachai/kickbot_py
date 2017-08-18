@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from telegram.ext import *
-from tabulate import tabulate
-from texttable import Texttable
-
-import csv, sys, time, os.path, pandas, numpy, telegram
+from emoji import emojize
+import csv, sys, time, os.path, pandas, telegram
 
 
 def forbiddenWords(chat_id):
@@ -80,18 +78,23 @@ def snforbidden(bot, update):
 def stat(bot, update):
     chat_id = update.message.chat_id
     pos = 1
-    message = Texttable()
-    message.add_row(['position', 'username', 'kicked_times'])
     f = pandas.read_csv('res/' + str(chat_id) + '/users.csv', sep=';')
+    message = ':tada: LA CLASSIFICA :tada:\r\nqui potrete vedere l\'attuale campione di KickBot e tutti i fancazzisti del canale che si cimentano alla ricerca delle parole vietate per poi farsi kickare in malo modo\r\n'
     sorted_f = pandas.DataFrame(f)
     sorted_f = sorted_f.sort_values(['kicked'], ascending=False)
     for user in sorted_f.values:
-        message.add_row([pos, user[1].split('@')[1], user[2]])
+        # message.add_row([pos, user[1].split('@')[1], user[2]])
+        if pos == 1:
+            message = message + ":crown:" + user[1] + " :arrow_backward:" + str(user[2])
+        else:
+            message = message + str(pos) + " " + user[1].split('@')[1].capitalize() + ":arrow_backward:" + str(user[2])
+        if user[2] == 1:
+            message = message + " volta\r\n"
+        else:
+            message = message + " volte\r\n"
+
         pos = pos + 1
-    message = message.draw()
-    print(message)
-    bot.send_message(chat_id=chat_id, text='<code>' + message + '</code>', parse_mode=telegram.ParseMode.HTML)
-    print(message)
+    bot.send_message(chat_id=chat_id, text=emojize(message, use_aliases=True), parse_mode=telegram.ParseMode.HTML)
 
 
 def start(bot, update):
