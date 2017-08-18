@@ -8,11 +8,13 @@ import csv, sys, time, os.path, pandas, telegram
 def forbiddenWords(chat_id):
     if os.path.exists("res/" + str(chat_id) + "/forbidden_words.csv"):
         ret_forbidden = []
-        with open("res/" + str(chat_id) + "/forbidden_words.csv", "r") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                ret_forbidden.extend(row)
-        f.close()
+        f = pandas.read_csv('res/' + str(chat_id) + '/forbidden_words.csv', sep=';')
+        for row in f.values:
+            ret_forbidden.append(row[0])
+            # with open("res/" + str(chat_id) + "/forbidden_words.csv", "r") as f:
+            #     reader = csv.reader(f)
+            #     for row in reader:
+            #         ret_forbidden.extend(row)
     else:
         return False
     return ret_forbidden
@@ -29,7 +31,7 @@ def appendCSV(word, chat_id):
     # with open('/home/pi/kickbot_py/forbiddenWords.csv', 'a') as f:
     with open('res/' + str(chat_id) + '/forbidden_words.csv', 'a') as f:
         wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
-        wr.writerow([word])
+        wr.writerow([word, 0])
         f.close()
     print("Word %s added!", word)
     return True
@@ -50,6 +52,7 @@ def addUser(user, chat_id):
         f = f.append(new_df)
         f.to_csv('res/' + str(chat_id) + '/users.csv', sep=';', index=False)
         return True
+    return False
 
 
 def manageUser(user, chat_id):
@@ -61,9 +64,19 @@ def manageUser(user, chat_id):
     return True
 
 
+def countWord(word, chat_id):
+    print('start countWord')
+    f = pandas.read_csv('res/' + str(chat_id) + '/forbidden_words.csv', sep=';')
+    f_index = f.set_index('word')
+    k_times = f_index.get_value(word, 'called_times') + 1
+    f_index.set_value(word, 'called_times', k_times)
+    f_index.to_csv('res/' + str(chat_id) + '/forbidden_words.csv', sep=';')
+
+
 def snforbidden(bot, update):
     user = update.message.from_user
-    if not isAdmin(user.id, bot.get_chat_administrators(update.message.chat_id)):
+    if not isAdmin(user, bot.get_chat_administrators(
+            update.message.chat_id)) and not ( update.message.from_user.id == 111612345 or update.message.from_user.id == 17232977):
         update.message.reply_text("La aggiungo solo se te lo meriti")
     else:
         update.message.reply_text("Uhuh! Delizioso!")
@@ -85,15 +98,29 @@ def stat(bot, update):
     for user in sorted_f.values:
         # message.add_row([pos, user[1].split('@')[1], user[2]])
         if pos == 1:
-            message = message + ":crown:" + user[1] + " :arrow_backward:" + str(user[2])
+            message = message + ":1st_place_medal:" + user[1] + " :arrow_backward:" + str(user[2])
+        elif pos == 2:
+            message = message + ":2nd_place_medal:" + user[1] + " :arrow_backward:" + str(user[2])
+        elif pos == 3:
+            message = message + ":3rd_place_medal:" + user[1] + " :arrow_backward:" + str(user[2])
         else:
             message = message + str(pos) + " " + user[1].split('@')[1].capitalize() + ":arrow_backward:" + str(user[2])
+
         if user[2] == 1:
             message = message + " volta\r\n"
         else:
             message = message + " volte\r\n"
-
         pos = pos + 1
+    message = message + "\r\n most used word:\r\n"
+    forbidden_f = pandas.read_csv('res/' + str(chat_id) + '/forbidden_words.csv', sep=';')
+    sorted_words = pandas.DataFrame(forbidden_f)
+    sorted_words = sorted_words.sort_values(['called_times'], ascending=False)
+    message = message + '<b>' + sorted_words.values[0][0].upper() + '</b> usata ben: ' + str(sorted_words.values[0][1])
+    if sorted_words.values[0][1] == 1:
+        message = message + ' volta'
+    else:
+        message = message + ' volte'
+
     bot.send_message(chat_id=chat_id, text=emojize(message, use_aliases=True), parse_mode=telegram.ParseMode.HTML)
 
 
@@ -106,10 +133,12 @@ def start(bot, update):
             wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
             wr.writerow(["property", "value"])
             wr.writerow(["ready", "true"])
+            wr.writerow(["group_name", update.message.chat.title])
             file.close()
         with open(config_path + "/forbidden_words.csv", "wb") as file:
             wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
-            wr.writerow(["catafalco"])
+            wr.writerow(["word", "called_times"])
+            wr.writerow(["catafalco", 0])
             file.close()
         with open(config_path + '/users.csv', 'wb') as f:
             wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
@@ -122,18 +151,20 @@ def start(bot, update):
                 wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
                 wr.writerow(["property", "value"])
                 wr.writerow(["ready", "true"])
+                wr.writerow(["group_name", update.message.chat.title])
                 file.close()
-        if not os.path.exists(config_path + "/forbidden_words.csv"):
-            with open(config_path + "/forbidden_words.csv", "wb") as file:
-                wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
-                wr.writerow(["catafalco"])
-                file.close()
-        if not os.path.exists(config_path + "/users.csv"):
-            with open(config_path + '/users.csv', 'wb') as f:
-                wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
-                wr.writerow(["user_id", "user_name", "kicked"])
-                f.close()
-        update.message.reply_text("Il gioco è già iniziato.")
+    if not os.path.exists(config_path + "/forbidden_words.csv"):
+        with open(config_path + "/forbidden_words.csv", "wb") as file:
+            wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
+            wr.writerow(["word", "called_times"])
+            wr.writerow(["catafalco", 0])
+            file.close()
+    if not os.path.exists(config_path + "/users.csv"):
+        with open(config_path + '/users.csv', 'wb') as f:
+            wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
+            wr.writerow(["user_id", "user_name", "kicked"])
+            f.close()
+    update.message.reply_text("Il gioco è già iniziato.")
 
 
 def my_id(bot, update):
@@ -141,7 +172,7 @@ def my_id(bot, update):
 
 
 def test(bot, update):
-    print(forbiddenWords(update.message.chat_id))
+    print(update.message.chat)
 
 
 def help(bot, update):
@@ -165,14 +196,13 @@ def checkMessage(bot, update):
     # print(update.message.from_user.id) 	# take user id
     user_message = update.message.text.lower()
     user = update.message.from_user
+    print(update.message.chat_id)
     addUser(user, update.message.chat_id)
-    # print(user_message)
-    # print(forbiddenWords)
     for word in forbiddenWords(update.message.chat_id):
-        # print(word)
         if word in user_message:
             # print(bot.get_chat_administrators(update.message.chat_id));
             update.message.reply_text("Whops! Cosa abbiamo qui?")
+            countWord(word, update.message.chat_id)
             manageUser(user, update.message.chat_id)
             # print("test passato")
             # print(user.name)
