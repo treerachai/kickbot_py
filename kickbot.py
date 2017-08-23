@@ -71,6 +71,7 @@ def countWord(word, chat_id):
     k_times = f_index.get_value(word, 'called_times') + 1
     f_index.set_value(word, 'called_times', k_times)
     f_index.to_csv('res/' + str(chat_id) + '/forbidden_words.csv', sep=';')
+    return k_times
 
 
 def snforbidden(bot, update):
@@ -154,17 +155,17 @@ def start(bot, update):
                 wr.writerow(["ready", "true"])
                 wr.writerow(["group_name", update.message.chat.title])
                 file.close()
-    if not os.path.exists(config_path + "/forbidden_words.csv"):
-        with open(config_path + "/forbidden_words.csv", "wb") as file:
-            wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
-            wr.writerow(["word", "called_times"])
-            wr.writerow(["catafalco", 0])
-            file.close()
-    if not os.path.exists(config_path + "/users.csv"):
-        with open(config_path + '/users.csv', 'wb') as f:
-            wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
-            wr.writerow(["user_id", "user_name", "kicked"])
-            f.close()
+        if not os.path.exists(config_path + "/forbidden_words.csv"):
+            with open(config_path + "/forbidden_words.csv", "wb") as file:
+                wr = csv.writer(file, delimiter=";", quoting=csv.QUOTE_NONE)
+                wr.writerow(["word", "called_times"])
+                wr.writerow(["catafalco", 0])
+                file.close()
+        if not os.path.exists(config_path + "/users.csv"):
+            with open(config_path + '/users.csv', 'wb') as f:
+                wr = csv.writer(f, delimiter=";", quoting=csv.QUOTE_NONE)
+                wr.writerow(["user_id", "user_name", "kicked"])
+                f.close()
     update.message.reply_text("Il gioco è già iniziato.")
 
 
@@ -172,8 +173,8 @@ def my_id(bot, update):
     bot.send_message(update.message.chat_id, update.message.from_user.id)
 
 
-# def test(bot, update):
-# print(update.message.chat)
+def test(bot, update):
+    print(update.message.chat)
 
 
 def help(bot, update):
@@ -203,7 +204,7 @@ def checkMessage(bot, update):
         if word in user_message:
             # print(bot.get_chat_administrators(update.message.chat_id));
             update.message.reply_text("Whops! Cosa abbiamo qui?")
-            countWord(word, update.message.chat_id)
+            called_times = countWord(word, update.message.chat_id)
             manageUser(user, update.message.chat_id)
             # print("test passato")
             # print(user.name)
@@ -219,6 +220,9 @@ def checkMessage(bot, update):
             bot.send_message(update.message.chat_id, "avoglia se ti banno")
             if update.message.from_user.id == 111612345 or update.message.from_user.id == 17232977:
                 bot.send_message(update.message.chat_id, 'ma io non posso bannare il mio papà')
+                return False
+            if called_times > 1:
+                bot.send_message(update.message.chat_id, 'pare che qualcuno abbia già scoperto questa parola...\r\n vabbè, ti bannerò la prossima volta')
                 return False
             bot.kickChatMember(update.message.chat_id, user.id)
             if update.message.chat.type == "supergroup":
