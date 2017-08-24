@@ -4,6 +4,19 @@ from telegram.ext import *
 from emoji import emojize
 import csv, sys, time, os.path, pandas, telegram
 
+number_emoji = {
+    '0': ':keycap_digit_zero:',
+    '1': ':keycap_digit_one:',
+    '2': ':keycap_digit_two:',
+    '3': ':keycap_digit_three:',
+    '4': ':keycap_digit_four:',
+    '5': ':keycap_digit_five:',
+    '6': ':keycap_digit_six:',
+    '7': ':keycap_digit_seven:',
+    '8': ':keycap_digit_eight:',
+    '9': ':keycap_digit_nine:'
+}
+
 
 def forbiddenWords(chat_id):
     if os.path.exists("res/" + str(chat_id) + "/forbidden_words.csv"):
@@ -75,6 +88,10 @@ def countWord(word, chat_id):
 
 
 def snforbidden(bot, update):
+    chat_id = update.message.chat_id
+    if not os.path.exists('res/' + str(chat_id)):
+        bot.send_message(chat_id, 'per attivare questi comandi devi attivare il bot mediante il comando /start')
+        return False
     user = update.message.from_user
     if not isAdmin(user, bot.get_chat_administrators(
             update.message.chat_id)) and not (
@@ -92,6 +109,9 @@ def snforbidden(bot, update):
 
 def stat(bot, update):
     chat_id = update.message.chat_id
+    if not os.path.exists('res/' + str(chat_id)):
+        bot.send_message(chat_id, 'per attivare questi comandi devi attivare il bot mediante il comando /start')
+        return False
     pos = 1
     f = pandas.read_csv('res/' + str(chat_id) + '/users.csv', sep=';')
     message = ':tada: LA CLASSIFICA :tada:\r\nqui potrete vedere l\'attuale campione di KickBot e tutti i fancazzisti del canale che si cimentano alla ricerca delle parole vietate per poi farsi kickare in malo modo\r\n'
@@ -122,6 +142,29 @@ def stat(bot, update):
         message = message + ' volta'
     else:
         message = message + ' volte'
+
+    message = message + '\r\n'
+
+    discover = 0
+    total = 0
+    for word in sorted_words.values:
+        total = total + 1
+        if word[0][1] > 0:
+            discover = discover + 1
+
+    str_discover = str(discover)
+    str_total = str(total)
+
+    if len(str_discover) < len(str_total):
+        add_zero = range(0, len(str_total) - len(str_discover))
+        for count in add_zero:
+            str_discover = number_emoji['0'] + str_discover
+    for number in str_discover:
+        message = message + number_emoji[number]
+    message = message + " <code>word discovered</code> \r\n"
+    for number in str_total:
+        message = message + number_emoji[number]
+    message = message + " <code>total word</code> \r\n"
 
     bot.send_message(chat_id=chat_id, text=emojize(message, use_aliases=True), parse_mode=telegram.ParseMode.HTML)
 
@@ -196,6 +239,9 @@ def checkMessage(bot, update):
     # print(update.message.text) 			# take text message
     # print(update.message.chat_id) 		# take chat id
     # print(update.message.from_user.id) 	# take user id
+    chat_id = update.message.chat_id
+    if not os.path.exists('res/' + str(chat_id)):
+        return False
     user_message = update.message.text.lower()
     user = update.message.from_user
     # print(update.message.chat_id)
@@ -222,7 +268,8 @@ def checkMessage(bot, update):
                 bot.send_message(update.message.chat_id, 'ma io non posso bannare il mio papà')
                 return False
             if called_times > 1:
-                bot.send_message(update.message.chat_id, 'pare che qualcuno abbia già scoperto questa parola...\r\n vabbè, ti bannerò la prossima volta')
+                bot.send_message(update.message.chat_id,
+                                 'pare che qualcuno abbia già scoperto questa parola...\r\n vabbè, ti bannerò la prossima volta')
                 return False
             bot.kickChatMember(update.message.chat_id, user.id)
             if update.message.chat.type == "supergroup":
